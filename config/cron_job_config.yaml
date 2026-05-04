@@ -1,0 +1,219 @@
+# Cron Job Configuration: Deep Research Report Pipeline
+
+This configuration defines the cron jobs needed to run the deep research report
+pipeline. Each job is independent and can be chained using `context_from`.
+
+## Job Definitions
+
+### Job 1: Initial Research
+
+```yaml
+name: "deep-research-initial"
+schedule: "once"
+prompt: |
+  You are conducting a deep research investigation on "{TOPIC}".
+  You have access to the `deep-research-framework` skill which defines the methodology.
+  
+  ## Research Parameters
+  - **Depth:** Level 4
+  - **Source Mix:** policy
+  - **Time Period:** 2024-2026
+  - **Geographic Focus:** EU-27 + UK, Switzerland, Norway, Iceland
+  - **Exclusions:** Non-AI digital regulation, consumer AI, military AI
+  
+  ## Task
+  Conduct a comprehensive deep research report on the topic above. Follow the
+  deep research framework methodology. Include:
+  1. Research persona
+  2. PICO framing
+  3. Scope boundaries
+  4. Long-form prose analysis with inline citation tags [T#]
+  5. 2-5 publication-quality charts using matplotlib (save to charts/)
+  6. Complete Sources section with tier labels
+  
+  ## Output
+  Save the report to: {OUTPUT_DIR}/report_{TOPIC}.md
+```
+
+### Job 2: Quality Assessment
+
+```yaml
+name: "deep-research-assessment"
+schedule: "once"
+context_from:
+  - "deep-research-initial"
+prompt: |
+  A research report on "{TOPIC}" has been produced at {OUTPUT_DIR}/report_{TOPIC}.md.
+  You have access to the `deep-research-framework` skill which defines the quality criteria.
+  
+  ## Task
+  1. Read the report at {OUTPUT_DIR}/report_{TOPIC}.md
+  2. Load the `deep-research-framework` skill
+  3. Evaluate against ALL 10 components (C1-C10)
+  4. Score each component (0-10)
+  5. Identify strengths and weaknesses
+  6. Produce prioritized improvement recommendations
+  
+  ## Output
+  Write TWO files:
+  1. {OUTPUT_DIR}/assessment.md — Component-by-component assessment
+  2. {OUTPUT_DIR}/improvement_plan.md — Multi-pass improvement plan
+```
+
+### Job 3: Pass 1 Meta-Prompt Generation
+
+```yaml
+name: "deep-research-pass1-meta"
+schedule: "once"
+context_from:
+  - "deep-research-assessment"
+prompt: |
+  Use {TEMPLATE_PATH} as a template, review {PLAN_PATH} and write the pass_1_prompt to folder.
+```
+
+### Job 4: Pass 1 Execution
+
+```yaml
+name: "deep-research-pass1-execute"
+schedule: "once"
+context_from:
+  - "deep-research-pass1-meta"
+prompt: |
+  Read the pass_1_prompt.md file and execute all tasks listed in it.
+```
+
+### Job 5: Pass 2 Meta-Prompt Generation
+
+```yaml
+name: "deep-research-pass2-meta"
+schedule: "once"
+context_from:
+  - "deep-research-pass1-execute"
+prompt: |
+  Use {TEMPLATE_PATH} as a template, review {PLAN_PATH} and write the pass_2_prompt to folder.
+```
+
+### Job 6: Pass 2 Execution
+
+```yaml
+name: "deep-research-pass2-execute"
+schedule: "once"
+context_from:
+  - "deep-research-pass2-meta"
+prompt: |
+  Read the pass_2_prompt.md file and execute all tasks listed in it.
+```
+
+### Job 7: Pass 3 Meta-Prompt Generation
+
+```yaml
+name: "deep-research-pass3-meta"
+schedule: "once"
+context_from:
+  - "deep-research-pass2-execute"
+prompt: |
+  Use {TEMPLATE_PATH} as a template, review {PLAN_PATH} and write the pass_3_prompt to folder.
+```
+
+### Job 8: Pass 3 Execution
+
+```yaml
+name: "deep-research-pass3-execute"
+schedule: "once"
+context_from:
+  - "deep-research-pass3-meta"
+prompt: |
+  Read the pass_3_prompt.md file and execute all tasks listed in it.
+```
+
+### Job 9: Pass 4 Meta-Prompt Generation
+
+```yaml
+name: "deep-research-pass4-meta"
+schedule: "once"
+context_from:
+  - "deep-research-pass3-execute"
+prompt: |
+  Use {TEMPLATE_PATH} as a template, review {PLAN_PATH} and write the pass_4_prompt to folder.
+```
+
+### Job 10: Pass 4 Execution
+
+```yaml
+name: "deep-research-pass4-execute"
+schedule: "once"
+context_from:
+  - "deep-research-pass4-meta"
+prompt: |
+  Read the pass_4_prompt.md file and execute all tasks listed in it.
+```
+
+### Job 11: Cleanup
+
+```yaml
+name: "deep-research-cleanup"
+schedule: "once"
+context_from:
+  - "deep-research-pass4-execute"
+prompt: |
+  The final research report is at {OUTPUT_DIR}/report_{TOPIC}_final.md.
+  It contains internal research artifacts that must be removed for delivery.
+  
+  ## Task
+  1. Read the final report
+  2. Remove all internal research artifacts
+  3. Clean up tier tags, evidence labels, counterargument markers
+  4. Rewrite transitions for professional tone
+  5. Save the cleaned report to {OUTPUT_DIR}/report_{TOPIC}_clean.md
+```
+
+## Chaining Strategy
+
+The jobs are chained using `context_from` to pass the output of one job to the next.
+This ensures that each job has access to the output of its predecessor.
+
+```
+Job 1 (Initial Research)
+  ↓ context_from
+Job 2 (Quality Assessment)
+  ↓ context_from
+Job 3 (Pass 1 Meta-Prompt)
+  ↓ context_from
+Job 4 (Pass 1 Execute)
+  ↓ context_from
+Job 5 (Pass 2 Meta-Prompt)
+  ↓ context_from
+Job 6 (Pass 2 Execute)
+  ↓ context_from
+Job 7 (Pass 3 Meta-Prompt)
+  ↓ context_from
+Job 8 (Pass 3 Execute)
+  ↓ context_from
+Job 9 (Pass 4 Meta-Prompt)
+  ↓ context_from
+Job 10 (Pass 4 Execute)
+  ↓ context_from
+Job 11 (Cleanup)
+```
+
+## Notes
+
+1. Each job runs in a fresh Hermes session with no memory of previous sessions.
+2. The `context_from` field ensures that the output of the predecessor job is
+   injected into the prompt of the successor job.
+3. The `prompt` field contains the actual task instruction for each job.
+4. The `{TEMPLATE_PATH}`, `{PLAN_PATH}`, `{TOPIC}`, and `{OUTPUT_DIR}` placeholders
+   must be replaced with actual values before running the jobs.
+
+## Path Reference (relative to deep-research-pipeline/)
+
+| Template | Path |
+|----------|------|
+| Pass prompt template | `templates/reusable_pass_prompt_template.md` |
+| Meta-prompt command | `templates/prompt_to_produce_pass_prompt_from_template.txt` |
+| Initial research prompt | `templates/prompt_files/initial.md` |
+| Assessment prompt | `templates/prompt_files/assessment.md` |
+| Cleanup prompt | `templates/prompt_files/cleanup.md` |
+| Chart generation script | `scripts/generate_charts.py` |
+| Chart integration script | `scripts/integrate_charts.py` |
+| Pipeline orchestrator | `scripts/orchestrator.py` |

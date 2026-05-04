@@ -1,0 +1,8 @@
+Use {TEMPLATE_PATH} as a template, review {PLAN_PATH} and write the pass_{n}_prompt to folder.
+
+This is a generic meta-prompt that generates a pass prompt for any pass number.
+Replace {TEMPLATE_PATH} with the path to the reusable pass prompt template.
+Replace {PLAN_PATH} with the path to the improvement plan.
+Replace {n} with the pass number (1, 2, 3, or 4).
+
+The generated pass prompt will be saved as pass_{n}_prompt.md in the output folder.

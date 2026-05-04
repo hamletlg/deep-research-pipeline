@@ -1,0 +1,11 @@
+Use {TEMPLATE_PATH} as a template, review {PLAN_PATH} and write the pass_{n}_prompt to folder.
+
+Where:
+  {TEMPLATE_PATH} = path to reusable_pass_prompt_template.md
+  {PLAN_PATH}     = path to improvement_plan.md (in the case study's analysis/ folder)
+  {n}             = pass number (1, 2, 3, or 4)
+
+Example:
+  TEMPLATE_PATH=/path/to/deep-research-pipeline/templates/reusable_pass_prompt_template.md
+  PLAN_PATH=/path/to/deep-research-pipeline/case-studies/european-ai-2026/analysis/improvement_plan.md
+  n=1
