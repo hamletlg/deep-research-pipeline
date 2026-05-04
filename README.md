@@ -146,7 +146,7 @@ To customize for different topics:
 ## Key Design Decisions
 
 1. **Fresh sessions per pass** — Each session is completely isolated. No cross-session
-   memory dependency. This respects the 181K context limit.
+   memory dependency. This respects the context limit (up to 180K).
 
 2. **Two-level automation** — Pass prompts are generated at runtime from the template
    and improvement plan. No pre-written prompts needed.
